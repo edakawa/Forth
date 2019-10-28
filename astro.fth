@@ -1,7 +1,7 @@
 \
 \ Author: Hajime EDAKAWA <hajime.edakawa@gmail.com>
 \ License: Public Domain
-\ Last Update: Mar 2010
+\ Last Update: Oct 2019
 \
 
 \ ------------------------------------------------------------------------------
