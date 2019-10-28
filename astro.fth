@@ -119,8 +119,7 @@
 \ ------------------------------------------------------------------------------
 
 : DELTA  ( F: epsilon lambda.s -- F: declination )  \ 赤緯
-  %FSIN FSWAP %FSIN F* %FASIN  ( F: asin[sin[l]*sin[e]] )
-;
+  %FSIN FSWAP %FSIN F* %FASIN ;  ( F: asin[sin[l]*sin[e]] )
 
 \ ------------------------------------------------------------------------------
 
@@ -225,7 +224,7 @@
 
     #TMP #DIFF 24e F* F+ [FTO] #TMP
     #DIFF FABS 0.00005e F< IF
-      \       #D F>S . #D #D FLOOR F- 60e F* FROUND F>S ." 時 " . ." 分"
+      \ #D F>S . #D #D FLOOR F- 60e F* FROUND F>S ." 時 " . ." 分"
       #D F>S . ." 時"
       #D #D F>D D>F F- 60e F* FROUND F>S . ." 分"
       EXIT
