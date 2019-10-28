@@ -142,13 +142,15 @@
 
 \ ------------------------------------------------------------------------------
 
+0 VALUE #DBG    \ -1=ON, 0=OFF
+
 0 VALUE #YEAR   \ 2000+Y
 0 VALUE #MONTH  \ 月
 0 VALUE #DAY    \ 日
 
-0e FVALUE #D           \ 経過時間
-0e FVALUE #LONGTITUDE  \ 経度
+0e FVALUE #TV          \ 時刻変数
 0e FVALUE #LATITUDE    \ 緯度
+0e FVALUE #LONGTITUDE  \ 経度
 0e FVALUE #TIME        \ 経過ユリウス時
 0e FVALUE #EPSILON     \ 黄道傾角
 0e FVALUE #LAMBDA.S    \ 太陽の視黄道
@@ -160,29 +162,24 @@
 0e FVALUE #DIFF        \ 差
 0e FVALUE #TK          \ XXX
 0e FVALUE #T           \ XXX
-0e FVALUE #TMP         \ XXX
 
 \ ------------------------------------------------------------------------------
 
-: CALC  ( F: latitude longtitude d  S: day month year -- )
-  TO #YEAR           \ 1999 年 (2000-(-1))
-  TO #MONTH          \ 11 月
-  TO #DAY            \ 14 日
-  [FTO] #D           \  6 時
-  [FTO] #LONGTITUDE  \ 東京の経度
-  [FTO] #LATITUDE    \ 東京の緯度
+: SET.LAT/LNG  ( F: latitude longtitude -- )
+  [FTO] #LONGTITUDE [FTO] #LATITUDE ;
 
-  #YEAR #MONTH #DAY #D TIME      [FTO] #TIME
-  #TIME                EPSILON   [FTO] #EPSILON
-  #TIME                LAMBDA.S  [FTO] #LAMBDA.S
-  #EPSILON #LAMBDA.S   ALPHA     [FTO] #ALPHA
-  #EPSILON #LAMBDA.S   DELTA     [FTO] #DELTA
-  #TIME                AU        [FTO] #AU
-  #AU                  ALTITUDE  [FTO] #ALTITUDE
-  #LONGTITUDE #D #TIME THETA     [FTO] #THETA
+: UPDATE ( -- )
+  #YEAR #MONTH #DAY #TV TIME     [FTO] #TIME
+  #TIME                 EPSILON  [FTO] #EPSILON
+  #TIME                 LAMBDA.S [FTO] #LAMBDA.S
+  #EPSILON #LAMBDA.S    ALPHA    [FTO] #ALPHA
+  #EPSILON #LAMBDA.S    DELTA    [FTO] #DELTA
+  #TIME                 AU       [FTO] #AU
+  #AU                   ALTITUDE [FTO] #ALTITUDE
+  #LONGTITUDE #TV #TIME THETA    [FTO] #THETA
 
-  0 IF
-    CR ." -------------------------------"
+  #DBG IF
+    CR ." --------------------------------------------------"
     CR ."   #TIME     " #TIME F.
     CR ."   #EPSILON  " #EPSILON F.
     CR ."   #LAMBDA.S " #LAMBDA.S F.
@@ -191,42 +188,39 @@
     CR ."   #AU       " #AU F.
     CR ."   #ALTITUDE " #ALTITUDE F.
     CR ."   #THETA    " #THETA F.
-    CR ." ------------------------------"
+    CR ." --------------------------------------------------"
   THEN ;
 
-\ ------------------------------------------------------------------------------
-
-: TRY  ( S: year month day -- )
-  6e [FTO] #TMP
-  TO #DAY TO #MONTH TO #YEAR
+: ITER  ( S: year month day -- )
+  TO #DAY  TO #MONTH  TO #YEAR
+  6e [FTO] #TV
   0e [FTO] #DIFF
   BEGIN
-    #DAY #MONTH #YEAR 35.6544e 139.7447e #TMP CALC
+    UPDATE
 
     #ALTITUDE %FSIN                     ( F: sin[a]                 )
     #DELTA %FSIN #LATITUDE %FSIN F* F-  ( F: X=sin[a]-sin[d]*sin[l] )
     #DELTA %FCOS #LATITUDE %FCOS F*     ( F: X Y=cos[d]*cos[l]      )
     F/ %FACOS                           ( F: Z=acos[X/Y]            )
     FDUP F0< INVERT IF FNEGATE THEN     ( F: 0<Z => -Z              )
+
     [FTO] #TK
     #THETA #ALPHA F- [FTO] #T
-
     #TK #T F- 360e F/ [FTO] #DIFF
     #DIFF #DIFF FLOOR F- [FTO] #DIFF
     #DIFF 0.5e FSWAP F< IF #DIFF 1e F- [FTO] #DIFF THEN
 
-    0 IF
+    #DBG IF
       CR ." TK   = " #TK F.
       CR ." T    = " #T F. ." (" #THETA F. ." - " #ALPHA F. ." )"
       CR ." DIFF = " #DIFF F.
-      CR ." D( ) = " #TMP F.
+      CR ." TV   = " #TV F.
     THEN
 
-    #TMP #DIFF 24e F* F+ [FTO] #TMP
+    #TV #DIFF 24e F* F+ [FTO] #TV
     #DIFF FABS 0.00005e F< IF
-      \ #D F>S . #D #D FLOOR F- 60e F* FROUND F>S ." 時 " . ." 分"
-      #D F>S . ." 時"
-      #D #D F>D D>F F- 60e F* FROUND F>S . ." 分"
+      #TV F>S . ." 時"
+      #TV #TV F>D D>F F- 60e F* FROUND F>S . ." 分"
       EXIT
     THEN
   AGAIN ;
@@ -234,11 +228,12 @@
 \ ------------------------------------------------------------------------------
 
 : TEST
+  35.6544e 139.7447e SET.LAT/LNG
   CR ." ---------------------------"
   13 8 DO
     4 1 DO
       CR ." 2019 年 " J . ." 月 " I . ." 日"
-      19 J I TRY
+      19 J I ITER
     LOOP
     CR ." ---------------------------"
   LOOP
