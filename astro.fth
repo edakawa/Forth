@@ -3,6 +3,9 @@
 \ License: Public Domain
 \ Last Update: Oct 2019
 \
+\ Reference:
+\   Kou NAGASAWA, Computations of Sunrise and Sunset, Chijin-Shokan, Japan.
+\
 
 \ ------------------------------------------------------------------------------
 
@@ -20,7 +23,6 @@
 
 : FUNDER* ( r1 r2 r3 -- r1*r3 r2 ) FROT F* FSWAP ;
 : FUNDER/ ( r1 r2 r3 -- r1/r3 r2 ) FROT FSWAP F/ FSWAP ;
-
 : FUNDER*+ ( r1 r2 r3 -- r1*r3+r2 ) FUNDER* F+ ;
 : F*+ ( r1 r2 r3 -- r1+r2*r3 ) F* F+ ;
 
@@ -128,7 +130,6 @@
   360.007700536e FUNDER*          ( F: l d B*t A*t^2  )
   325.4606e F+ F+                 ( F: l d C          )
   24e FUNDER/ 360e FUNDER* F+ F+  ( F: Z=360d+C+l     )
-
   BEGIN FDUP            F0< WHILE 360e F+ REPEAT
   BEGIN FDUP 360e FSWAP F<  WHILE 360e F- REPEAT ;
 
@@ -209,6 +210,7 @@
     #TK #T F- 360e F/ [FTO] #DIFF
     #DIFF #DIFF FLOOR F- [FTO] #DIFF
     #DIFF 0.5e FSWAP F< IF #DIFF 1e F- [FTO] #DIFF THEN
+    #TV #DIFF 24e F* F+ [FTO] #TV
 
     #DBG IF
       CR ." TK   = " #TK F.
@@ -217,7 +219,6 @@
       CR ." TV   = " #TV F.
     THEN
 
-    #TV #DIFF 24e F* F+ [FTO] #TV
     #DIFF FABS 0.00005e F< IF
       #TV F>S . ." 時"
       #TV #TV F>D D>F F- 60e F* FROUND F>S . ." 分"
