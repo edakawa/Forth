@@ -1,3 +1,9 @@
+\
+\ Author: Hajime EDAKAWA <hajime.edakawa@gmail.com>
+\ License: Public Domain
+\ Last Update: Mar 2010
+\
+
 \ ------------------------------------------------------------------------------
 
 3.14159265358979e FCONSTANT $PI
