@@ -1,2 +1,2 @@
 # Forth
-This file calculates sunrise time only for in Japan.
+astro.fth -- This file calculates sunrise time only for in Japan.
