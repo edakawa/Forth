@@ -29,11 +29,11 @@
 : FUNDER*+ ( r1 r2 r3 -- r1*r3+r2 ) FUNDER* F+ ;
 : F*+ ( r1 r2 r3 -- r1+r2*r3 ) F* F+ ;
 
-: F<= ( r1 r2 -- r1<=r2 ) 2FDUP F< F- F0= OR ;
-: WITHIN  ( F: x lo hi -- S: lo<=x<hi ) FSWAP 2 FPICK F<= F< AND ;
 : FNIP ( r1 r2 -- r2 ) FSWAP FDROP ;
 : 2FDUP ( r1 r2 -- r1 r2 r1 r2 ) FOVER FOVER ;
 : FTUCK ( r1 r2 -- r2 r1 r2 ) FSWAP FOVER ;
+: F<= ( r1 r2 -- r1<=r2 ) 2FDUP F< F- F0= OR ;
+: WITHIN  ( F: x lo hi -- S: lo<=x<hi ) FSWAP 2 FPICK F<= F< AND ;
 
 : RAD>DEG [ 180e $PI F/ ] FLiteral F* ;
 : DEG>RAD [ $PI 180e F/ ] FLiteral F* ;
