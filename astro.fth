@@ -18,7 +18,6 @@
 60.0e           FCONSTANT DEC-MIN
 3600.0e         FCONSTANT DEC-SEC
 
-
 \ ------------------------------------------------------------------------------
 
 : F, ( r -- ) FALIGN HERE F! 1 FLOATS ALLOT ;
