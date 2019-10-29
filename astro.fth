@@ -20,6 +20,8 @@
 : FNIP ( r1 r2 -- r2 ) FSWAP FDROP ;
 : 2FDUP ( r1 r2 -- r1 r2 r1 r2 ) FOVER FOVER ;
 : FTUCK ( r1 r2 -- r2 r1 r2 ) FSWAP FOVER ;
+: F<= ( r1 r2 -- r1<=r2 ) 2FDUP F< F- F0= OR ;
+: WITHIN  ( F: x lo hi -- S: lo<=x<hi ) FSWAP 2 FPICK F<= F< AND ;
 
 : FUNDER* ( r1 r2 r3 -- r1*r3 r2 ) FROT F* FSWAP ;
 : FUNDER/ ( r1 r2 r3 -- r1/r3 r2 ) FROT FSWAP F/ FSWAP ;
@@ -103,16 +105,12 @@
 
 \ ------------------------------------------------------------------------------
 
-: %WITHIN  ( F: x lo hi -- S: lo<=x<hi )
-  FSWAP 2 FPICK 2FDUP    ( F: x hi lo x lo x  S:              )
-  F< F- F0= OR F< AND ;  ( F:                 S: f f OR f AND )
-
 : ALPHA  ( epsilon lambda.s -- right_ascension )  \ 赤経
   FTUCK                                 ( F: l e l             )
   %FTAN FSWAP %FCOS F*                  ( F: l x=tan[l]*cos[e] )
   %FATAN                                ( F: l a=atan[x]       )
   FSWAP                                 ( F: a l               )
-  0e 180e %WITHIN IF                    ( F: a                 )
+  0e 180e WITHIN IF                    ( F: a                 )
     FDUP F0< IF 180e F+ THEN
   ELSE
     FDUP F0< IF 360e ELSE 180e THEN F+
