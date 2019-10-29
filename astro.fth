@@ -11,6 +11,14 @@
 
 3.14159265358979e FCONSTANT $PI
 
+15.0e           FCONSTANT RA-HOUR    \ 赤道座標系の赤経の角度を表す単位
+0.25e           FCONSTANT RA-MIN
+0.0125e 3.0e F/ FCONSTANT RA-SEC
+1.0e            FCONSTANT DEC-DEG    \ 赤道座標系の赤緯の角度を表す単位
+60.0e           FCONSTANT DEC-MIN
+3600.0e         FCONSTANT DEC-SEC
+
+
 \ ------------------------------------------------------------------------------
 
 : F, ( r -- ) FALIGN HERE F! 1 FLOATS ALLOT ;
@@ -45,6 +53,68 @@
 : %FASIN FASIN RAD>DEG ;
 : %FACOS FACOS RAD>DEG ;
 : %FATAN FATAN RAD>DEG ;
+
+\ ------------------------------------------------------------------------------
+
+: HMS>D ( DEGREE MINUTE SECOND -- TOTAL-DEGREE )
+  DUP 0 < IF NEGATE -1 >R ELSE 1 >R THEN
+
+  RA-SEC F*       ( -- f: min sec   ) ( -- deg )
+  FSWAP           ( -- f: sec min   ) ( -- deg )
+  RA-MIN F*       ( -- f: sec min   ) ( -- deg )
+  F+              ( -- f: deg'      ) ( -- deg )
+  S>F             ( -- f: deg' deg  ) ( -- )
+  RA-HOUR F* F+   ( -- f: total-deg ) ( -- )
+
+  R> S>F F* ;
+
+: D>HMS ( DEGREE -- DEGREE MINUTE SECOND )
+  FDUP 0.0E F< IF FNEGATE -1 >R ELSE 1 >R THEN
+
+  FDUP             ( -- f: r r        ) ( -- )
+  RA-HOUR F/ FLOOR ( -- f: r deg      ) ( -- )
+  F>S              ( -- f: r          ) ( -- deg )
+  DUP              ( -- f: r          ) ( -- deg deg )
+  S>F              ( -- f: r deg      ) ( -- deg )
+  RA-HOUR F* F-    ( -- f: r'         ) ( -- deg )
+  FDUP             ( -- f: r' r'      ) ( -- deg )
+  RA-MIN F/ FLOOR  ( -- f: r' min     ) ( -- deg )
+  FSWAP            ( -- f: min r'     ) ( -- deg )
+  FOVER            ( -- f: min r' min ) ( -- deg )
+  RA-MIN F* F-     ( -- f: min r''    ) ( -- deg )
+  RA-SEC F/        ( -- f: min sec    ) ( -- deg )
+
+  R> * ;
+
+: DMS>D ( DEGREE MINUTE SECOND -- TOTAL-DEGREE )
+  DUP 0 < IF NEGATE -1 >R ELSE 1 >R THEN
+
+  DEC-SEC F/      ( -- f: min sec   ) ( -- deg )
+  FSWAP           ( -- f: sec min   ) ( -- deg )
+  DEC-MIN F/      ( -- f: sec min   ) ( -- deg )
+  F+              ( -- f: deg'      ) ( -- deg )
+  S>F             ( -- f: deg' deg  ) ( -- )
+  DEC-DEG F/ F+   ( -- f: total-deg ) ( -- )
+
+  R> S>F F* ;
+
+: D>DMS ( DEGREE -- DEGREE MINUTE SECOND )
+  FDUP 0.0E F< IF FNEGATE -1 >R ELSE 1 >R THEN
+
+  FDUP             ( -- f: r r        ) ( -- )
+  DEC-DEG F* FLOOR ( -- f: r deg      ) ( -- )
+  F>S              ( -- f: r          ) ( -- deg )
+  DUP              ( -- f: r          ) ( -- deg deg )
+  S>F              ( -- f: r deg      ) ( -- deg )
+  F-               ( -- f: r'         ) ( -- deg )
+  FDUP             ( -- f: r' r'      ) ( -- deg )
+  DEC-MIN F* FLOOR ( -- f: r' min     ) ( -- deg )
+  FSWAP            ( -- f: min r'     ) ( -- deg )
+  FOVER            ( -- f: min r' min ) ( -- deg )
+  DEC-MIN F/ F-    ( -- f: min r''    ) ( -- deg )
+  DEC-SEC F*       ( -- f: min sec    ) ( -- deg )
+
+  R> * ;
 
 \ ------------------------------------------------------------------------------
 
@@ -143,8 +213,10 @@
 0e FVALUE $H  \ 観測者の高さ (単位:メートル)
 
 : ALTITUDE  ( F: au -- F: altitude )  \ 太陽の出没高度
-  FDUP 0.266994e FSWAP F/ FNEGATE             ( F: au -S )
-  $H F- 0.585556e F- 0.0024428e FROT F/ F+ ;  ( F: alt )
+  FDUP 0.266994e FSWAP F/ FNEGATE ( F: au -S     )
+  0.035333e $H FSQRT F* F-        ( F: au -S-E   )      
+  0.585556e F-                    ( F: au -S-E-R )
+  0.0024428e FROT F/ F+ ;         ( F: altitude  )
 
 \ ------------------------------------------------------------------------------
 
@@ -209,13 +281,12 @@
     #DELTA %FCOS #LATITUDE %FCOS F*     ( F: X Y=cos[d]*cos[l]      )
     F/ %FACOS                           ( F: Z=acos[X/Y]            )
     FDUP F0< INVERT IF FNEGATE THEN     ( F: 0<Z => -Z              )
-
-    [FTO] #TK
-    #THETA #ALPHA F- [FTO] #T
-    #TK #T F- 360e F/ [FTO] #DIFF
-    #DIFF #DIFF FLOOR F- [FTO] #DIFF
+                                       [FTO] #TK
+    #THETA #ALPHA F-                   [FTO] #T
+    #TK #T F- 360e F/                  [FTO] #DIFF
+    #DIFF #DIFF FLOOR F-               [FTO] #DIFF
     #DIFF 0.5e FSWAP F< IF #DIFF 1e F- [FTO] #DIFF THEN
-    #TV #DIFF 24e F* F+ [FTO] #TV
+    #TV #DIFF 24e F* F+                [FTO] #TV
 
     #DBG IF
       CR ." TK   = " #TK F.
