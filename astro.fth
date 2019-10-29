@@ -17,16 +17,23 @@
 : FVALUE ( r "name" -- ) CREATE F, DOES> F@ ;
 : [FTO]  ( r "name" -- ) ' >BODY POSTPONE LITERAL POSTPONE F! ; IMMEDIATE
 
-: FNIP ( r1 r2 -- r2 ) FSWAP FDROP ;
-: 2FDUP ( r1 r2 -- r1 r2 r1 r2 ) FOVER FOVER ;
-: FTUCK ( r1 r2 -- r2 r1 r2 ) FSWAP FOVER ;
-: F<= ( r1 r2 -- r1<=r2 ) 2FDUP F< F- F0= OR ;
-: WITHIN  ( F: x lo hi -- S: lo<=x<hi ) FSWAP 2 FPICK F<= F< AND ;
-
+\
+\ The source of UNDER and WITHIN words is the book of "Thinking Forth".
+\
+\ Reference:
+\   Leo Brodie (1984, 1994 and 2004) Thinking Forth,
+\     Forth Interest Group: http://www.forth.org
+\ 
 : FUNDER* ( r1 r2 r3 -- r1*r3 r2 ) FROT F* FSWAP ;
 : FUNDER/ ( r1 r2 r3 -- r1/r3 r2 ) FROT FSWAP F/ FSWAP ;
 : FUNDER*+ ( r1 r2 r3 -- r1*r3+r2 ) FUNDER* F+ ;
 : F*+ ( r1 r2 r3 -- r1+r2*r3 ) F* F+ ;
+
+: F<= ( r1 r2 -- r1<=r2 ) 2FDUP F< F- F0= OR ;
+: WITHIN  ( F: x lo hi -- S: lo<=x<hi ) FSWAP 2 FPICK F<= F< AND ;
+: FNIP ( r1 r2 -- r2 ) FSWAP FDROP ;
+: 2FDUP ( r1 r2 -- r1 r2 r1 r2 ) FOVER FOVER ;
+: FTUCK ( r1 r2 -- r2 r1 r2 ) FSWAP FOVER ;
 
 : RAD>DEG [ 180e $PI F/ ] FLiteral F* ;
 : DEG>RAD [ $PI 180e F/ ] FLiteral F* ;
