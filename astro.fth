@@ -316,25 +316,28 @@
 
 CREATE DAYS 31 , 28 , 31 , 30 , 31 , 30 , 31 , 31 , 30 , 31 , 30 , 31 ,
 
-: LEAP? ( year -- f )
+: LEAP? ( year -- f )  \ 閏年なら -1 平年なら 0 をスタックに置く
   DUP DUP  4 MOD 0=  SWAP  100 MOD 0<>  AND  SWAP  400 MOD 0=  OR ;
 
-: YEAR.MONTH>DAY ( year month -- day )
+: YM>DAY ( year month -- day )  \ YYYY 年 MM 月 の日数をスタックに置く
   1- DAYS  SWAP  CELLS + @
   DUP 28 =  ROT  LEAP?  AND IF 1+ THEN ;
 
-\ 35.6544e 139.7447e SET.LAT/LNG
-26.2167e 127.6667e SET.LAT/LNG
-: TEST { year }
-  CR CR     
-  13 1 DO
-    year I YEAR.MONTH>DAY 1+ 1 DO
-      2000 year + J I .YYYY/MM/DD ."  -- "
-      year J I ITER
-      ." ,  "
-      I 7 MOD 0= IF CR THEN
+: APPLY.EVERY-DAY { year xt -- }  \ YYYY-01-01 から YYYY-12-31 まで xt を適用する
+  12 1+ 1 DO
+    year I YM>DAY 1+ 1 DO
+      year J I xt EXECUTE
     LOOP
-    CR CR
   LOOP ;
+
+\ ------------------------------------------------------------------------------
+
+: TEST { year month day -- }
+  day 1 = IF CR CR THEN
+  year month day .YYYY/MM/DD ."  -- " year 2000 - month day ITER ." ,  " 
+  day 7 MOD 0= IF CR THEN ;
+
+26.2167e 127.6667e SET.LAT/LNG    \ 沖縄の緯度と経度を設定する
+2020 ' TEST APPLY.EVERY-DAY
 
 \ ------------------------------------------------------------------------------
