@@ -1,7 +1,7 @@
 \
 \ Author: Hajime EDAKAWA <hajime.edakawa@gmail.com>
 \ License: Public Domain
-\ Last Update: Oct 2019
+\ Last Update: Nov 2019
 \
 \ Reference:
 \   Kou NAGASAWA, Computations of Sunrise and Sunset, Chijin-Shokan, Japan.
@@ -14,6 +14,7 @@
 15.0e           FCONSTANT RA-HOUR    \ 赤道座標系の赤経の角度を表す単位
 0.25e           FCONSTANT RA-MIN
 0.0125e 3.0e F/ FCONSTANT RA-SEC
+
 1.0e            FCONSTANT DEC-DEG    \ 赤道座標系の赤緯の角度を表す単位
 60.0e           FCONSTANT DEC-MIN
 3600.0e         FCONSTANT DEC-SEC
@@ -52,6 +53,14 @@
 : %FASIN FASIN RAD>DEG ;
 : %FACOS FACOS RAD>DEG ;
 : %FATAN FATAN RAD>DEG ;
+
+: .YYYY/MM/DD ( year month day -- )
+  ROT 10000 * ROT 100 * + + S>D
+  <# # # 47 HOLD # # 47 HOLD # # # # #> TYPE ;
+
+: .HH:MM ( hour minute -- )
+  SWAP 100 * + S>D
+  <# # # 58 HOLD # # #> TYPE ;
 
 \ ------------------------------------------------------------------------------
 
@@ -186,7 +195,7 @@
   %FTAN FSWAP %FCOS F*                  ( F: l x=tan[l]*cos[e] )
   %FATAN                                ( F: l a=atan[x]       )
   FSWAP                                 ( F: a l               )
-  0e 180e WITHIN IF                    ( F: a                 )
+  0e 180e WITHIN IF                     ( F: a                 )
     FDUP F0< IF 180e F+ THEN
   ELSE
     FDUP F0< IF 360e ELSE 180e THEN F+
@@ -295,24 +304,37 @@
     THEN
 
     #DIFF FABS 0.00005e F< IF
-      #TV F>S . ." 時"
-      #TV #TV F>D D>F F- 60e F* FROUND F>S . ." 分"
+      #TV F>S
+      #TV #TV F>D D>F F- 60e F* FROUND F>S
+      DUP 60 =  IF DROP 1+ 0 THEN
+      .HH:MM
       EXIT
     THEN
   AGAIN ;
 
 \ ------------------------------------------------------------------------------
 
-: TEST
-  35.6544e 139.7447e SET.LAT/LNG
-  CR ." ---------------------------"
-  13 8 DO
-    4 1 DO
-      CR ." 2019 年 " J . ." 月 " I . ." 日"
-      19 J I ITER
+CREATE DAYS 31 , 28 , 31 , 30 , 31 , 30 , 31 , 31 , 30 , 31 , 30 , 31 ,
+
+: LEAP? ( year -- f )
+  DUP DUP  4 MOD 0=  SWAP  100 MOD 0<>  AND  SWAP  400 MOD 0=  OR ;
+
+: YEAR.MONTH>DAY ( year month -- day )
+  1- DAYS  SWAP  CELLS + @
+  DUP 28 =  ROT  LEAP?  AND IF 1+ THEN ;
+
+\ 35.6544e 139.7447e SET.LAT/LNG
+26.2167e 127.6667e SET.LAT/LNG
+: TEST { year }
+  CR CR     
+  13 1 DO
+    year I YEAR.MONTH>DAY 1+ 1 DO
+      2000 year + J I .YYYY/MM/DD ."  -- "
+      year J I ITER
+      ." ,  "
+      I 7 MOD 0= IF CR THEN
     LOOP
-    CR ." ---------------------------"
-  LOOP
-  CR ;
+    CR CR
+  LOOP ;
 
 \ ------------------------------------------------------------------------------
