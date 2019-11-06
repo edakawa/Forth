@@ -9,15 +9,15 @@
 
 \ ------------------------------------------------------------------------------
 
-3.14159265358979e FCONSTANT $PI
+3.14159265358979e  FCONSTANT $PI          \ 円周率
 
-15.0e           FCONSTANT RA-HOUR    \ 赤道座標系の赤経の角度を表す単位
-0.25e           FCONSTANT RA-MIN
-0.0125e 3.0e F/ FCONSTANT RA-SEC
+360e        24e F/ FCONSTANT $HMS-H-UNIT  \ HMS 表記の単位:Hour
+$HMS-H-UNIT 60e F/ FCONSTANT $HMS-M-UNIT  \ HMS 表記の単位:Minute
+$HMS-M-UNIT 60e F/ FCONSTANT $HMS-S-UNIT  \ HMS 表記の単位:Second
 
-1.0e            FCONSTANT DEC-DEG    \ 赤道座標系の赤緯の角度を表す単位
-60.0e           FCONSTANT DEC-MIN
-3600.0e         FCONSTANT DEC-SEC
+             1e    FCONSTANT $DMS-D-UNIT  \ DMS 表記の単位:Degree
+$DMS-D-UNIT 60e F* FCONSTANT $DMS-M-UNIT  \ DMS 表記の単位:Minute
+$DMS-M-UNIT 60e F* FCONSTANT $DMS-S-UNIT  \ DMS 表記の単位:Second
 
 \ ------------------------------------------------------------------------------
 
@@ -41,7 +41,7 @@
 : 2FDUP ( r1 r2 -- r1 r2 r1 r2 ) FOVER FOVER ;
 : FTUCK ( r1 r2 -- r2 r1 r2 ) FSWAP FOVER ;
 : F<= ( r1 r2 -- r1<=r2 ) 2FDUP F< F- F0= OR ;
-: WITHIN  ( F: x lo hi -- S: lo<=x<hi ) FSWAP 2 FPICK F<= F< AND ;
+: FWITHIN  ( F: x lo hi -- S: lo<=x<hi ) FSWAP 2 FPICK F<= F< AND ;
 
 : RAD>DEG [ 180e $PI F/ ] FLiteral F* ;
 : DEG>RAD [ $PI 180e F/ ] FLiteral F* ;
@@ -54,6 +54,11 @@
 : %FACOS FACOS RAD>DEG ;
 : %FATAN FATAN RAD>DEG ;
 
+:    SAVE-DS-SIGN  s" DUP 0< IF ABS -1 ELSE 1 THEN >R"    EVALUATE ; immediate
+: RESTORE-DS-SIGN  s" R> S>F F*"                          EVALUATE ; immediate
+:    SAVE-FS-SIGN  s" FDUP F0< IF FABS -1 ELSE 1 THEN >R" EVALUATE ; immediate
+: RESTORE-FS-SIGN  s" R> *"                               EVALUATE ; immediate
+
 : .YYYY/MM/DD ( year month day -- )
   ROT 10000 * ROT 100 * + + S>D
   <# # # 47 HOLD # # 47 HOLD # # # # #> TYPE ;
@@ -64,65 +69,37 @@
 
 \ ------------------------------------------------------------------------------
 
-: HMS>D ( DEGREE MINUTE SECOND -- TOTAL-DEGREE )
-  DUP 0 < IF NEGATE -1 >R ELSE 1 >R THEN
+: HMS>DEG  ( S: hour F: minute second -- F: degree )
+  SAVE-DS-SIGN
+  $HMS-S-UNIT F*  $HMS-M-UNIT FUNDER*  F+  S>F $HMS-H-UNIT F*  F+
+  RESTORE-DS-SIGN ;
 
-  RA-SEC F*       ( -- f: min sec   ) ( -- deg )
-  FSWAP           ( -- f: sec min   ) ( -- deg )
-  RA-MIN F*       ( -- f: sec min   ) ( -- deg )
-  F+              ( -- f: deg'      ) ( -- deg )
-  S>F             ( -- f: deg' deg  ) ( -- )
-  RA-HOUR F* F+   ( -- f: total-deg ) ( -- )
+: DEG>HMS  ( F: degree -- S: hour F: minute second )
+  SAVE-FS-SIGN
+  FDUP                             ( F: d d     S:   )
+  $HMS-H-UNIT F/ FLOOR  FDUP  F>S  ( F: d d     S: h )
+  $HMS-H-UNIT F* F-                ( F: d'      S: h )
+  FDUP                             ( F: d' d'   S: h )
+  $HMS-M-UNIT F/ FLOOR  FTUCK      ( F: m d' m  S: h )
+  $HMS-M-UNIT F* F-                ( F: m d''   S: h )
+  $HMS-S-UNIT F/                   ( F: m s     S: h )
+  RESTORE-FS-SIGN ;
 
-  R> S>F F* ;
+: DMS>DEG  ( S: degree F: minute second -- F: degree )
+  SAVE-DS-SIGN
+  $DMS-S-UNIT F/  $DMS-M-UNIT FUNDER/  F+  S>F $DMS-D-UNIT F/  F+
+  RESTORE-DS-SIGN ;
 
-: D>HMS ( DEGREE -- DEGREE MINUTE SECOND )
-  FDUP 0.0E F< IF FNEGATE -1 >R ELSE 1 >R THEN
-
-  FDUP             ( -- f: r r        ) ( -- )
-  RA-HOUR F/ FLOOR ( -- f: r deg      ) ( -- )
-  F>S              ( -- f: r          ) ( -- deg )
-  DUP              ( -- f: r          ) ( -- deg deg )
-  S>F              ( -- f: r deg      ) ( -- deg )
-  RA-HOUR F* F-    ( -- f: r'         ) ( -- deg )
-  FDUP             ( -- f: r' r'      ) ( -- deg )
-  RA-MIN F/ FLOOR  ( -- f: r' min     ) ( -- deg )
-  FSWAP            ( -- f: min r'     ) ( -- deg )
-  FOVER            ( -- f: min r' min ) ( -- deg )
-  RA-MIN F* F-     ( -- f: min r''    ) ( -- deg )
-  RA-SEC F/        ( -- f: min sec    ) ( -- deg )
-
-  R> * ;
-
-: DMS>D ( DEGREE MINUTE SECOND -- TOTAL-DEGREE )
-  DUP 0 < IF NEGATE -1 >R ELSE 1 >R THEN
-
-  DEC-SEC F/      ( -- f: min sec   ) ( -- deg )
-  FSWAP           ( -- f: sec min   ) ( -- deg )
-  DEC-MIN F/      ( -- f: sec min   ) ( -- deg )
-  F+              ( -- f: deg'      ) ( -- deg )
-  S>F             ( -- f: deg' deg  ) ( -- )
-  DEC-DEG F/ F+   ( -- f: total-deg ) ( -- )
-
-  R> S>F F* ;
-
-: D>DMS ( DEGREE -- DEGREE MINUTE SECOND )
-  FDUP 0.0E F< IF FNEGATE -1 >R ELSE 1 >R THEN
-
-  FDUP             ( -- f: r r        ) ( -- )
-  DEC-DEG F* FLOOR ( -- f: r deg      ) ( -- )
-  F>S              ( -- f: r          ) ( -- deg )
-  DUP              ( -- f: r          ) ( -- deg deg )
-  S>F              ( -- f: r deg      ) ( -- deg )
-  F-               ( -- f: r'         ) ( -- deg )
-  FDUP             ( -- f: r' r'      ) ( -- deg )
-  DEC-MIN F* FLOOR ( -- f: r' min     ) ( -- deg )
-  FSWAP            ( -- f: min r'     ) ( -- deg )
-  FOVER            ( -- f: min r' min ) ( -- deg )
-  DEC-MIN F/ F-    ( -- f: min r''    ) ( -- deg )
-  DEC-SEC F*       ( -- f: min sec    ) ( -- deg )
-
-  R> * ;
+: DEG>DMS  ( F: degree -- S: degree F: minute second )
+  SAVE-FS-SIGN
+  FDUP                             ( F: r r     S:   )
+  $DMS-D-UNIT F* FLOOR  FDUP  F>S  ( F: r d     S: d )
+  $DMS-D-UNIT F/ F-                ( F: r'      S: d )
+  FDUP                             ( F: r' r'   S: d )
+  $DMS-M-UNIT F* FLOOR  FTUCK      ( F: m r' m  S: d )
+  $DMS-M-UNIT F/ F-                ( F: m r''   S: d )
+  $DMS-S-UNIT F*                   ( F: m s     S: d )
+  RESTORE-FS-SIGN ;
 
 \ ------------------------------------------------------------------------------
 
@@ -195,7 +172,7 @@
   %FTAN FSWAP %FCOS F*                  ( F: l x=tan[l]*cos[e] )
   %FATAN                                ( F: l a=atan[x]       )
   FSWAP                                 ( F: a l               )
-  0e 180e WITHIN IF                     ( F: a                 )
+  0e 180e FWITHIN IF                    ( F: a                 )
     FDUP F0< IF 180e F+ THEN
   ELSE
     FDUP F0< IF 360e ELSE 180e THEN F+
@@ -277,7 +254,7 @@
     CR ." --------------------------------------------------"
   THEN ;
 
-: ITER  ( S: year month day -- )
+: ITER  ( S: year month day -- ) \ 日の出時刻を計算する
   TO #DAY  TO #MONTH  TO #YEAR
   6e [FTO] #TV
   0e [FTO] #DIFF
@@ -332,12 +309,12 @@ CREATE DAYS 31 , 28 , 31 , 30 , 31 , 30 , 31 , 31 , 30 , 31 , 30 , 31 ,
 
 \ ------------------------------------------------------------------------------
 
-: TEST { year month day -- }
+: TEST { year month day -- }  \ 日の出時刻を表示する
   day 1 = IF CR CR THEN
   year month day .YYYY/MM/DD ."  -- " year 2000 - month day ITER ." ,  " 
   day 7 MOD 0= IF CR THEN ;
 
-26.2167e 127.6667e SET.LAT/LNG    \ 沖縄の緯度と経度を設定する
+26.2167e 127.6667e SET.LAT/LNG  \ 沖縄の緯度と経度を設定する
 2020 ' TEST APPLY.EVERY-DAY
 
 \ ------------------------------------------------------------------------------
